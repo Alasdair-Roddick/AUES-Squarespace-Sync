@@ -1,7 +1,6 @@
 /**
  * @app index.ts
  * @description sends a post request to a url with a json body and authorization header. This is then used to trigger a database sync on the AUES dashboard.
- * @url http://192.168.1.120:5055/api/cron/sync-orders
  */
 
 
