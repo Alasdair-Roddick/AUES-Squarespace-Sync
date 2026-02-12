@@ -31,6 +31,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 /**
  * @description sends a post request to the dashboard url with a json body and authorization header. This is then used to trigger a database sync on the AUES dashboard.
  */
+const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 429]);
+
 const syncOrders = async () => {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
@@ -45,25 +47,31 @@ const syncOrders = async () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to sync orders: ${response.status} ${response.statusText}`);
+                if (NON_RETRYABLE_STATUSES.has(response.status)) {
+                    consecutiveFailures++;
+                    console.error(`Sync failed: ${response.status} ${response.statusText} (not retryable)`);
+                    return;
+                }
+                throw new Error(`${response.status} ${response.statusText}`);
             }
 
             consecutiveFailures = 0;
             console.log('Orders synced successfully');
             return;
         } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
             const isLastAttempt = attempt === MAX_RETRIES;
 
             if (isLastAttempt) {
                 consecutiveFailures++;
-                console.error(`Sync failed after ${MAX_RETRIES} attempts:`, error);
+                console.error(`Sync failed after ${MAX_RETRIES} attempts: ${message}`);
 
                 if (consecutiveFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
                     console.error(`WARNING: ${consecutiveFailures} consecutive sync failures — check dashboard connectivity`);
                 }
             } else {
                 const delay = Math.pow(2, attempt) * 1000;
-                console.error(`Sync attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delay / 1000}s...`, error);
+                console.error(`Sync attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delay / 1000}s: ${message}`);
                 await sleep(delay);
             }
         }
