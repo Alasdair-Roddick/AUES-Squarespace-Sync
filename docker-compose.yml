@@ -1,0 +1,11 @@
+services:
+  sync:
+    image: oven/bun:latest
+    working_dir: /app
+    volumes:
+      - ./index.ts:/app/index.ts
+      - ./.env:/app/.env
+    command: bun run index.ts
+    env_file:
+      - ./.env
+    restart: unless-stopped
