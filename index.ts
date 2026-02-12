@@ -5,12 +5,17 @@
  */
 
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://192.168.1.120:5055/api/cron/sync-orders';
+const DASHBOARD_URL = process.env.DASHBOARD_URL
 const CRON_SECRET = process.env.CRON_SECRET;
 const SYNC_INTERVAL = 1000 * 10 * 60;
 
 if (!CRON_SECRET) {
     console.error('CRON_SECRET is not set. Please set it in the environment variables.');
+    process.exit(1);
+}
+
+if (!DASHBOARD_URL) {
+    console.error('DASHBOARD_URL is not set. Please set it in the environment variables.');
     process.exit(1);
 }
 
